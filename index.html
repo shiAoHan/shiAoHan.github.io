@@ -1,2 +1,85 @@
-是澳寒的博客
-struggle for a better future
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>哈尔滨景点地图</title>
+    <style>
+        html, body, #viewDiv {//指定viewDiv的样式，大小，位置
+        padding: 0;
+            margin: 0;
+            height: 100%;
+            width: 100%;
+        }
+    </style>
+    <link rel="stylesheet" href="https://js.arcgis.com/4.17/esri/css/main.css">
+    <script src="https://js.arcgis.com/4.17/"></script>
+    <script>
+        require([
+            "esri/Map",//引入esri中的库
+            "esri/views/MapView",
+            "esri/layers/Layer"
+        ], function(Map, MapView,Layer) {
+
+            var map = new Map({                 //指定底层地图样式
+                basemap: "topo-vector"
+            });
+
+            var view = new MapView({//此为基础底层地图，指定地图显示的Div为viewDiv，地图样式，中心点，比例尺，2D
+                container: "viewDiv",
+                map: map,
+                center: [116.414617,39.915599],
+                zoom:4
+            });
+
+            var coordsWidget = document.createElement("div");
+            coordsWidget.id = "coordsWidget";
+            coordsWidget.className = "esri-widget esri-component";
+            coordsWidget.style.padding = "7px 15px 5px";
+
+            view.ui.add(coordsWidget, "bottom-right");              //添加按钮，获取地图实时坐标
+
+            //*** ADD ***//
+            function showCoordinates(pt) {
+                var coords =
+                    "Lat/Lon " +
+                    pt.latitude.toFixed(3) +
+                    " " +
+                    pt.longitude.toFixed(3) +
+                    " | Scale 1:" +
+                    Math.round(view.scale * 1) / 1 +
+                    " | Zoom " +
+                    view.zoom;
+                coordsWidget.innerHTML = coords;
+            }
+
+            view.watch("stationary", function (isStationary) {
+                showCoordinates(view.center);
+            });
+
+            view.on("pointer-move", function (evt) {
+                showCoordinates(view.toMap({ x: evt.x, y: evt.y }));
+            });//以上，获取地图实时坐标
+
+            function addLayer(layerItemPromise, index) {
+                return layerItemPromise.then(function (layer) {
+                    map.add(layer, index);
+                });
+            }
+
+            var trailheadsPortalItem = Layer.fromPortalItem({
+                portalItem: {
+                    id: "3bd784d051594264afc157ef9e89269c"
+                }
+            });
+
+            addLayer(trailheadsPortalItem, 0);//添加通过id值引入的图层
+
+
+        });
+    </script>
+</head>
+<body>
+<div id="viewDiv"></div>
+</body>
+</html>
