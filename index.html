@@ -1,233 +1,197 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no" />
-    <title>贝尔LOVE Tour地图</title>
-    <link rel="stylesheet" href="https://js.arcgis.com/4.17/esri/themes/light/main.css">
- <script src="https://js.arcgis.com/4.17/"></script>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>景点地图 designed by ao_han</title>
     <style>
-      html,
-      body,
-      #viewDiv {
-        padding: 0;
-        margin: 0;
-        height: 100%;
-        width: 100%;
-      }
-      img{
-        height: auto;
-        width: auto;
-        border: 3px solid #cccccc;
-      }
+        html, body, #viewDiv {
+            padding: 0;
+            margin: 0;
+            height: 100%;
+            width: 100%;
+        }
+        img{
+            height: auto;
+            width: auto;
+            border: 3px solid #cccccc;
+        }
+        #sumdiv{
+            padding: 5px 15px;
+        }
+
+        p{
+            display: inline-block;
+        }
     </style>
-  </head>
-  <body>
+    <link rel="stylesheet" href="https://js.arcgis.com/4.17/esri/themes/light/main.css">
+    <script src="https://js.arcgis.com/4.17/"></script>
+</head>
+<body>
     <div id="viewDiv"></div>
-
-
-  </body>
-  </body>
+    <div id="sumdiv" class="esri-widget">
+        <p>经度:</p>
+        <input type="text" id="x1">
+        <p>纬度:</p>
+        <input type="text" id="y1">
+        <input type="button" id="button1" value="画点">
+    </div>
+</body>
 </html>
 <script>
-  require(["esri/Map", "esri/views/MapView",
-      "esri/widgets/Locate",
-      "esri/widgets/Track",
-      "esri/Graphic",
+    require([
+        "esri/Map",
+        "esri/views/MapView",
+        "esri/layers/FeatureLayer",
+        "dojo/dom",
+        "dojo/on",
+        "dojo/ready",
+        "esri/Graphic",
+        "esri/layers/GraphicsLayer"
+    ], function(Map, MapView,FeatureLayer,dom,on,ready, Graphic, GraphicsLayer) {
+
+        var map = new Map({
+            basemap: "streets-navigation-vector"
+        });
+
+        var graphicsLayer = new GraphicsLayer();
+        map.add(graphicsLayer);
+
+        var popupTrailheads = {
+            title: "{title}",
+            content:
+                "<b><br><img src='{image}'/><br><b>电话:</b> {mobile}<br><b>地址:</b> {address}<br><b>景点介绍:</b> {introduction}"
+        };
+
+        var trailheadsRenderer = {
+            type: "simple",
+            symbol: {
+                type: "picture-marker",
+                url: "https://img-blog.csdnimg.cn/2020112511404149.png",
+                width: "36px",
+                height: "36px"
+            }
+        };
+
+        var headsLabels = {
+            symbol: {
+                type: "text",
+                color: "#FFFFFF",
+                haloColor: "#5E8D74",
+                haloSize: "2px",
+                font: {
+                    size: "12px",
+                    family: "Noto Sans",
+                    style: "italic",
+                    weight: "normal"
+                }
+            },
+            labelPlacement: "above-center",
+            labelExpressionInfo: {
+                expression: "$feature.title"
+            }
+        };
+
+        var dLayer = new FeatureLayer({
+            url: "https://services7.arcgis.com/fOOzAQbZan499asc/arcgis/rest/services/ao_han/FeatureServer/0",
+            outFields: ["*"],
+            renderer: trailheadsRenderer,
+            labelingInfo: [headsLabels],
+            popupTemplate: popupTrailheads
+        });
+
+        map.add(dLayer, 0);
+
+
+        var view = new MapView({
+            container: "viewDiv",
+            map: map,
+            center: [106.783,34.846], // longitude, latitude
+            zoom: 4
+        });
+
+        //获取地图实时坐标
+        var coordsWidget = document.createElement("div");
+        coordsWidget.id = "coordsWidget";
+        coordsWidget.className = "esri-widget esri-component";
+        coordsWidget.style.padding = "7px 15px 5px";
+
+        view.ui.add(coordsWidget, "bottom-right");
+
         //*** ADD ***//
-        "esri/widgets/Compass",
+        function showCoordinates(pt) {
+            var coords = "Lat/Lon " + pt.latitude.toFixed(3) + " " + pt.longitude.toFixed(3) +
+                " | Scale 1:" + Math.round(view.scale * 1) / 1 +
+                " | Zoom " + view.zoom;
+            coordsWidget.innerHTML = coords;
+        }
 
-      "esri/layers/FeatureLayer",
+        view.watch("stationary", function(isStationary) {
+            showCoordinates(view.center);
+        });
 
+        view.on("pointer-move", function(evt) {
+            showCoordinates(view.toMap({ x: evt.x, y: evt.y }));
+        });//以上，获取地图实时坐标
 
+        /*画点*/
+        view.ui.add("sumdiv","top-right");              //2.加入位置，添加按钮，画点功能的按钮，位置
+        var x1x=dom.byId("x1");//用dojo实例化这些标签，实例化x1
+        var y1x=dom.byId("y1");//实例化y1
+        var button1x=dom.byId("button1");//实例化按钮
 
-    ]
-  , function (Map, MapView, Locate, Track, Graphic, Compass,FeatureLayer) {
-    var map = new Map({
-  //*** UPDATE ***//
-  basemap: "streets-navigation-vector"
-});
+        on(button1x,"click",function(){//3.执行一个画点的方法，同时传入点的坐标，实验十四内容
+            drawpointxx(parseFloat(x1x.value),parseFloat(y1x.value))//parseFloat(x1x.value) 获取坐标
+        });
 
+        function drawpointxx(xx,yy){     //4.画点的方法，本节课学习的内容，function drawpointxx(xx,yy)，实现画点，xx,yy的参数值为parseFloat() 获取的
+            var point = {               //声明一个对象 点的几何特征
+                type: "point",              //属性为点
+                longitude: xx,              //给出经纬度坐标
+                latitude: yy
+            };
 
+            var simpleMarkerSymbol = {              //声明一个对象 点的符号特征
+                type: "simple-marker",              //属性
+                color: [226, 119, 40],  // orange       颜色
+                outline: {              //轮廓
+                    color: [255, 255, 255], // white
+                    width: 1
+                }
+            };
 
-var trailheadsLabels = {
-  symbol: {
-    type: "text",
-    color: "#FFFFFF",
-    haloColor: "#993300",
-    haloSize: "5px",
-    font: {
-      size: "12px",
-      family: "Noto Sans",
-      style: "italic",
-      weight: "normal"
-    }
-  },
-  labelPlacement: "above-center",
-  labelExpressionInfo: {
-    expression: "$feature.title"
-  }
-};
+            var pointGraphic = new Graphic({                //实例化Graphic的一个对象
+                geometry: point,                //添加几何特征
+                symbol: simpleMarkerSymbol              //添加符号特征
+            });
 
+            graphicsLayer.add(pointGraphic);                //在图形图层中添加点图形
 
+            addFeature(point);              //5.在地图服务中添加点
+        };
+        /*增法*/
 
-// Trailheads feature layer (points)
-var trailheadsLayer = new FeatureLayer({
-  url:
-    "https://services7.arcgis.com/yPEKIfOIfL8lOMh6/arcgis/rest/services/beier/FeatureServer",
-     labelingInfo: [trailheadsLabels]
-});
+        function addFeature(geometry) {            //增加空间实体
+            const addFeature =  new Graphic({
+                geometry: geometry
+            });
+            const falseatureLayer=fLayer(geometry);
+            falseatureLayer.applyEdits({
+                addFeatures: [addFeature]
+            }).then(function(){
+                graphicsLayer.removeAll();              //增加添加图层后清空GraphicsLayer中Graphic
+            });
+        };
+        function fLayer(rggeometry) {               //改变图层
+            if(rggeometry!==null){//判断添加空间实体的几何特征，返回相应的图层
+                var gtype = rggeometry.type.toString();
+                switch(gtype) {
+                    case "point":
+                        return dLayer;
+                        break;
+                }
+            }
+        };
 
-map.add(trailheadsLayer,0);
-
-
-var popupTrailheads = {
-  title: "{title}",
-  content:
-    "<b><br><img src='{image}'/><br><b>时间:</b> {time}<br><b>爱的经纬度:</b> {longitude},{latitude}<br><b>在一起的地方:</b> {address}<br><b>照片故事:</b> {introduction} "
-};
-
-
-var trailheads = new FeatureLayer({
-  url:
-    "https://services7.arcgis.com/yPEKIfOIfL8lOMh6/arcgis/rest/services/beier/FeatureServer",
-  outFields: ["*"],
-  popupTemplate: popupTrailheads
-});
-
-map.add(trailheads,0);
-
-
-
-var view = new MapView({
-  container: "viewDiv",
-  map: map,
-  //*** UPDATE ***//
-  center: [126.6430, 45.77509],
-  zoom: 12
-});
-
-var search = new Search({
-  view: view
-});
-
-
-
-view.ui.add(search, "top-right");
-
-view.on("click", function (evt) {
-  search.clear();
-  view.popup.clear();
-  if (search.activeSource) {
-    var geocoder = search.activeSource.locator; // World geocode service
-    var params = {
-      location: evt.mapPoint
-    };
-    geocoder.locationToAddress(params).then(
-      function (response) {
-        // Show the address found
-        var address = response.address;
-        showPopup(address, evt.mapPoint);
-      },
-      function (err) {
-        // Show no address found
-        showPopup("No address found.", evt.mapPoint);
-      }
-    );
-  }
-});
-
-function showPopup(address, pt) {
-  view.popup.open({
-    title:
-      +Math.round(pt.longitude * 100000) / 100000 +
-      "," +
-      Math.round(pt.latitude * 100000) / 100000,
-    content: address,
-    location: pt
-  });
-}
-
-var locate = new Locate({
-  view: view,
-  useHeadingEnabled: false,
-  goToOverride: function (view, options) {
-    options.target.scale = 1500; // Override the default map scale
-    return view.goTo(options.target);
-  }
-});
-
-view.ui.add(locate, "top-left");
-
-var coordsWidget = document.createElement("div");
-coordsWidget.id = "coordsWidget";
-coordsWidget.className = "esri-widget esri-component";
-coordsWidget.style.padding = "7px 15px 5px";
-
-view.ui.add(coordsWidget, "bottom-right");
-
-//*** ADD ***//
-function showCoordinates(pt) {
-  var coords =
-    "Lat/Lon " +
-    pt.latitude.toFixed(3) +
-    " " +
-    pt.longitude.toFixed(3) +
-    " | Scale 1:" +
-    Math.round(view.scale * 1) / 1 +
-    " | Zoom " +
-    view.zoom;
-  coordsWidget.innerHTML = coords;
-}
-
-view.watch("stationary", function (isStationary) {
-  showCoordinates(view.center);
-});
-
-//*** ADD ***//
-var track = new Track({
-  view: view,
-  graphic: new Graphic({
-    symbol: {
-      type: "simple-marker",
-      size: "12px",
-      color: "green",
-      outline: {
-        color: "#efefef",
-        width: "1.5px"
-      }
-    }
-  }),
-  useHeadingEnabled: false // Don't change orientation of the map
-});
-
-view.ui.add(track, "top-left");
-
-//*** ADD ***//
-var compass = new Compass({
-  view: view
-});
-
-// adds the compass to the top left corner of the MapView
-view.ui.add(compass, "top-left");
-
-locate.on("locate", function(locateEvent){
-  addFeature(view.center);
-   showCoordinates(view.center);
-});
-
-  function addFeature(geometry){
-  const attributes= {};
-  attributes["utime"]=Date.now();
-
-  const addFeature=new Graphic({
-    geometry:geometry,
-    attributes:attributes
-  });
-  trailheadsLayer.applyEdits({
-    addFeatures:[addFeature]
-  });
-}
-
-  });
+    });
 </script>
