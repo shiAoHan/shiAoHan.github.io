@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no">
-    <title>景点地图 designed by ao_han</title>
+    <title>景点地图 created by ao_han</title>
     <style>
         html, body, #viewDiv {
             padding: 0;
@@ -16,28 +16,12 @@
             width: auto;
             border: 3px solid #cccccc;
         }
-        #sumdiv{
-            padding: 5px 15px;
-        }
-
-        p{
-            display: inline-block;
-        }
     </style>
     <link rel="stylesheet" href="https://js.arcgis.com/4.17/esri/themes/light/main.css">
     <script src="https://js.arcgis.com/4.17/"></script>
 </head>
 <body>
     <div id="viewDiv"></div>
-    <div id="sumdiv" class="esri-widget">
-        <p>经度:</p>
-        <input type="text" id="x1">
-        <br/>
-        <p>纬度:</p>
-        <input type="text" id="y1">
-        <br/>
-        <input type="button" id="button1" value="画点">
-    </div>
 </body>
 </html>
 <script>
@@ -59,13 +43,13 @@
         var graphicsLayer = new GraphicsLayer();
         map.add(graphicsLayer);
 
-        var popupTrailheads = {
+        var popup = {
             title: "{title}",
             content:
                 "<b><br><img src='{image}'/><br><b>电话:</b> {mobile}<br><b>地址:</b> {address}<br><b>景点介绍:</b> {introduction}"
         };
 
-        var trailheadsRenderer = {
+        var pointRenderer = {
             type: "simple",
             symbol: {
                 type: "picture-marker",
@@ -75,35 +59,14 @@
             }
         };
 
-        var headsLabels = {
-            symbol: {
-                type: "text",
-                color: "#FFFFFF",
-                haloColor: "#5E8D74",
-                haloSize: "2px",
-                font: {
-                    size: "12px",
-                    family: "Noto Sans",
-                    style: "italic",
-                    weight: "normal"
-                }
-            },
-            labelPlacement: "above-center",
-            labelExpressionInfo: {
-                expression: "$feature.title"
-            }
-        };
-
         var dLayer = new FeatureLayer({
             url: "https://services7.arcgis.com/fOOzAQbZan499asc/arcgis/rest/services/ao_han/FeatureServer/0",
             outFields: ["*"],
-            renderer: trailheadsRenderer,
-            labelingInfo: [headsLabels],
-            popupTemplate: popupTrailheads
+            popupTemplate: popup,
+            renderer: pointRenderer
         });
 
         map.add(dLayer, 0);
-
 
         var view = new MapView({
             container: "viewDiv",
@@ -135,65 +98,6 @@
         view.on("pointer-move", function(evt) {
             showCoordinates(view.toMap({ x: evt.x, y: evt.y }));
         });//以上，获取地图实时坐标
-
-        /*画点*/
-        view.ui.add("sumdiv","top-right");              //2.加入位置，添加按钮，画点功能的按钮，位置
-        var x1x=dom.byId("x1");//用dojo实例化这些标签，实例化x1
-        var y1x=dom.byId("y1");//实例化y1
-        var button1x=dom.byId("button1");//实例化按钮
-
-        on(button1x,"click",function(){//3.执行一个画点的方法，同时传入点的坐标，实验十四内容
-            drawpointxx(parseFloat(x1x.value),parseFloat(y1x.value))//parseFloat(x1x.value) 获取坐标
-        });
-
-        function drawpointxx(xx,yy){     //4.画点的方法，本节课学习的内容，function drawpointxx(xx,yy)，实现画点，xx,yy的参数值为parseFloat() 获取的
-            var point = {               //声明一个对象 点的几何特征
-                type: "point",              //属性为点
-                longitude: xx,              //给出经纬度坐标
-                latitude: yy
-            };
-
-            var simpleMarkerSymbol = {              //声明一个对象 点的符号特征
-                type: "simple-marker",              //属性
-                color: [226, 119, 40],  // orange       颜色
-                outline: {              //轮廓
-                    color: [255, 255, 255], // white
-                    width: 1
-                }
-            };
-
-            var pointGraphic = new Graphic({                //实例化Graphic的一个对象
-                geometry: point,                //添加几何特征
-                symbol: simpleMarkerSymbol              //添加符号特征
-            });
-
-            graphicsLayer.add(pointGraphic);                //在图形图层中添加点图形
-
-            addFeature(point);              //5.在地图服务中添加点
-        };
-        /*增法*/
-
-        function addFeature(geometry) {            //增加空间实体
-            const addFeature =  new Graphic({
-                geometry: geometry
-            });
-            const falseatureLayer=fLayer(geometry);
-            falseatureLayer.applyEdits({
-                addFeatures: [addFeature]
-            }).then(function(){
-                graphicsLayer.removeAll();              //增加添加图层后清空GraphicsLayer中Graphic
-            });
-        };
-        function fLayer(rggeometry) {               //改变图层
-            if(rggeometry!==null){//判断添加空间实体的几何特征，返回相应的图层
-                var gtype = rggeometry.type.toString();
-                switch(gtype) {
-                    case "point":
-                        return dLayer;
-                        break;
-                }
-            }
-        };
-
+        
     });
 </script>
