@@ -29,9 +29,10 @@
         "esri/Map",
         "esri/views/MapView",
         "esri/layers/FeatureLayer",
+        "esri/layers/WebTileLayer",
         "esri/Graphic",
         "esri/layers/GraphicsLayer"
-    ], function(Map, MapView, FeatureLayer, Graphic, GraphicsLayer) {
+    ], function(Map, MapView, FeatureLayer, WebTileLayer, Graphic, GraphicsLayer) {
 
         var map = new Map({
             basemap: "streets-navigation-vector"
@@ -39,6 +40,16 @@
 
         var graphicsLayer = new GraphicsLayer();
         map.add(graphicsLayer);
+        
+        var tiandituBaseUrl = "http://{subDomain}.tianditu.gov.cn"; //天地图服务地址
+        var token = "3a62df8255e95899d40aa26987f10dc3"; //天地图token
+        //矢量注记(球面墨卡托投影)
+        var tiledLayerAnno = new WebTileLayer({
+            urlTemplate:
+                tiandituBaseUrl + "/cva_w/wmts?SERVICE=WMTS&VERSION=1.0.0&REQUEST=GetTile&LAYER=cva&STYLE=default&FORMAT=tiles&TILEMATRIXSET=w&TILEMATRIX={level}&TILEROW={row}&TILECOL={col}&tk=" + token,
+            subDomains:
+                ["t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7"]
+        });
 
         var popup = {
             title: "{title}",
@@ -63,7 +74,7 @@
             renderer: pointRenderer
         });
 
-        map.add(dLayer, 0);
+        map.add(dLayer, 1);
 
         var view = new MapView({
             container: "viewDiv",
