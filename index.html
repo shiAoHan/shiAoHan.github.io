@@ -16,32 +16,40 @@
             width: auto;
             border: 3px solid #cccccc;
         }
+
+        p{
+            display: inline-block;
+        }
     </style>
     <link rel="shortcut icon" href="/favicon.ico" />
     <link rel="stylesheet" href="https://js.arcgis.com/4.17/esri/themes/light/main.css">
     <script src="https://js.arcgis.com/4.17/"></script>
 </head>
 <body>
-    <div id="viewDiv"></div>
+<div id="viewDiv"></div>
+
 </body>
 </html>
 <script>
     require([
         "esri/Map",
         "esri/views/MapView",
+        "esri/Basemap",
         "esri/layers/FeatureLayer",
-        "esri/layers/WebTileLayer",
-        "esri/Graphic",
-        "esri/layers/GraphicsLayer"
-    ], function(Map, MapView, FeatureLayer, WebTileLayer, Graphic, GraphicsLayer) {
+        "esri/layers/WebTileLayer"
+    ], function(Map, MapView, Basemap, FeatureLayer,WebTileLayer) {
+
+        // create a basemap from a dynamic mapserver
+        var basemap = new Basemap({
+            portalItem: {
+                id: "2ff6cf08dcab4e87b0cf51e0e710c76d"  // WGS84 Streets Vector webmap
+            }
+        });
 
         var map = new Map({
             basemap: "streets-navigation-vector"
         });
 
-        var graphicsLayer = new GraphicsLayer();
-        map.add(graphicsLayer);
-        
         var tiandituBaseUrl = "http://{subDomain}.tianditu.gov.cn"; //天地图服务地址
         var token = "3a62df8255e95899d40aa26987f10dc3"; //天地图token
         //矢量注记(球面墨卡托投影)
@@ -64,11 +72,13 @@
             symbol: {
                 type: "picture-marker",
                 url: "https://img-blog.csdnimg.cn/2020112511404149.png",
+                xoffset: 0,
+                yoffset: 18,
                 width: "36px",
                 height: "36px"
             }
         };
-        
+
         var pointLabels = {
             symbol: {
                 type: "text",
@@ -128,6 +138,8 @@
         view.on("pointer-move", function(evt) {
             showCoordinates(view.toMap({ x: evt.x, y: evt.y }));
         });//以上，获取地图实时坐标
-        
+
+
+
     });
 </script>
